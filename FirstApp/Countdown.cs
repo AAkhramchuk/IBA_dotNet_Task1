@@ -4,55 +4,64 @@ namespace FirstApp
 {
     internal class CountDown
     {
-        private static readonly CountDown instance = new CountDown();
+        private static readonly CountDown Instance = new ();
         public SysTimers.Timer Timer { get; private set; }
         private CountDown()
         {
             Timer = new(interval: 1000); // Timer to countdown seconds left
             Timer.Elapsed += (sender, e) => Processing();
         }
-        public static CountDown GetInstance() => instance;
+        public static CountDown GetInstance() => Instance;
 
-        public int CursorPosX = 0; // Cursor position left
-        public int CursorPosY = 0; // Cursor position top
-
-        public DateTime UserBirth; // Date when the user will have a birthday
-        public int UserAge;        // User age
+        public List<Include> Users = new ();
 
         //Countdown processing
-        public void Processing()
+        private void Processing()
         {
             const string Format = "' 'ddd' days 'hh' hours 'mm' minutes 'ss' seconds'";
 
-            CountDown Config = CountDown.GetInstance();
+            int OldPosX, OldPosY;
+
+            //CountDown Config = CountDown.GetInstance();
 
             DateTime Today = DateTime.Now;
             TimeSpan TimeLeft;
 
-            if (UserBirth.Date < Today.Date)
+            foreach(Include User in Users)
             {
-                UserBirth = UserBirth.AddYears(1);
-            }
-            if (UserBirth.Date == Today.Date)
-            {
-                TimeLeft = TimeSpan.Zero;
-            }
-            else
-            {
-                TimeLeft = UserBirth.Subtract(Today);
-            }
-            Console.SetCursorPosition(Config.CursorPosX, Config.CursorPosY);
-            Console.WriteLine(TimeLeft.ToString(Format));
-
-            if (UserBirth.Date == Today.Date)
-            {
-                if (Config.Timer != null)
+                // Time calculation for countdown line
+                if (User.Birth.Date < Today.Date)
                 {
-                    Config.Timer.Stop();
+                    User.Birth = User.Birth.AddYears(1);
                 }
-                Console.WriteLine("Поздравляем вам исполнилось " + ++UserAge + "          ");
+                if (User.Birth.Date == Today.Date)
+                {
+                    TimeLeft = TimeSpan.Zero;
+                }
+                else
+                {
+                    TimeLeft = User.Birth.Subtract(Today);
+                }
+
+                // Set position for countdown line
+                (OldPosX, OldPosY) = Console.GetCursorPosition();
+                Console.SetCursorPosition(Include.OutputText.Length, User.CursorPosY);
+                Console.WriteLine(TimeLeft.ToString(Format));
+                Console.SetCursorPosition(OldPosX, OldPosY);
+
+                // If birthday begins and Timer is active
+                if (User.ActiveTimer && User.Birth.Date == Today.Date)
+                {
+                    User.ActiveTimer = false;
+                    Console.WriteLine($"{User.Name} {User.Surname} Поздравляем вам исполнилось {++User.Age}");
+                }
             }
-            Console.Write("Для выхода нажмите клавишу Escape");
+            // Stop Timer
+            if (Instance.Timer != null
+                && Users.All(User => !User.ActiveTimer))
+            {
+                Instance.Timer.Stop();
+            }
         }
     }
 }
